@@ -1716,3 +1716,129 @@ test("error handling with invalid data and serializer errors", async () => {
 });
 
 
+
+test("ioredis scan implementation with multiple iterations", async () => {
+  // Mock ioredis client with scan method that returns multiple batches
+  const mockIoredisClient = {
+    scan: vi.fn()
+      .mockResolvedValueOnce(["cursor1", ["key1", "key2"]])
+      .mockResolvedValueOnce(["cursor2", ["key3", "key4"]])
+      .mockResolvedValueOnce(["0", ["key5"]]),
+    get: vi.fn().mockResolvedValue("{}"),
+    set: vi.fn().mockResolvedValue("OK"),
+    expire: vi.fn().mockResolvedValue(1),
+    del: vi.fn().mockResolvedValue(1),
+    mget: vi.fn().mockResolvedValue(["{}", "{}", "{}", "{}", "{}"]),
+  }
+  
+  // Create store with mock client
+  const store = new RedisStore({ client: mockIoredisClient })
+  
+  // Test _getAllKeys method
+  const keys = await store["_getAllKeys"]()
+  
+  // Verify scan was called correctly
+  expect(mockIoredisClient.scan).toHaveBeenCalledTimes(3)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(1, "0", "MATCH", "sess:*", "COUNT", 100)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(2, "cursor1", "MATCH", "sess:*", "COUNT", 100)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(3, "cursor2", "MATCH", "sess:*", "COUNT", 100)
+  
+  // Verify all keys were collected
+  expect(keys).toEqual(["key1", "key2", "key3", "key4", "key5"])
+  
+  // Test all method to ensure it works with the scan iterator
+  const allCallback = vi.fn()
+  await store.all(allCallback)
+  
+  // Verify mget was called with all keys
+  expect(mockIoredisClient.mget).toHaveBeenCalledWith(["key1", "key2", "key3", "key4", "key5"])
+  
+  // Verify callback was called with parsed sessions
+  expect(allCallback).toHaveBeenCalledWith(null, expect.any(Array))
+})
+
+
+
+test("ioredis scan implementation with multiple iterations", async () => {
+  // Mock ioredis client with scan method that returns multiple batches
+  const mockIoredisClient = {
+    scan: vi.fn()
+      .mockResolvedValueOnce(["cursor1", ["key1", "key2"]])
+      .mockResolvedValueOnce(["cursor2", ["key3", "key4"]])
+      .mockResolvedValueOnce(["0", ["key5"]]),
+    get: vi.fn().mockResolvedValue("{}"),
+    set: vi.fn().mockResolvedValue("OK"),
+    expire: vi.fn().mockResolvedValue(1),
+    del: vi.fn().mockResolvedValue(1),
+    mget: vi.fn().mockResolvedValue(["{}", "{}", "{}", "{}", "{}"]),
+  }
+  
+  // Create store with mock client
+  const store = new RedisStore({ client: mockIoredisClient })
+  
+  // Test _getAllKeys method
+  const keys = await store["_getAllKeys"]()
+  
+  // Verify scan was called correctly
+  expect(mockIoredisClient.scan).toHaveBeenCalledTimes(3)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(1, "0", "MATCH", "sess:*", "COUNT", 100)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(2, "cursor1", "MATCH", "sess:*", "COUNT", 100)
+  expect(mockIoredisClient.scan).toHaveBeenNthCalledWith(3, "cursor2", "MATCH", "sess:*", "COUNT", 100)
+  
+  // Verify all keys were collected
+  expect(keys).toEqual(["key1", "key2", "key3", "key4", "key5"])
+  
+  // Test all method to ensure it works with the scan iterator
+  const allCallback = vi.fn()
+  await store.all(allCallback)
+  
+  // Verify mget was called with all keys
+  expect(mockIoredisClient.mget).toHaveBeenCalledWith(["key1", "key2", "key3", "key4", "key5"])
+  
+  // Verify callback was called with parsed sessions
+  expect(allCallback).toHaveBeenCalledWith(null, expect.any(Array))
+})
+
+
+
+test("handle session with maximum TTL value", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "max-ttl-session"
+  
+  // Create a session with maximum TTL
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Spy on client.set to verify TTL value
+  const setSpy = vi.spyOn(store.client, 'set')
+  
+  // Use a custom TTL function that returns MAX_SAFE_INTEGER
+  const customStore = new RedisStore({
+    client,
+    ttl: () => Number.MAX_SAFE_INTEGER
+  })
+  
+  // Set the session
+  await promisify(customStore.set.bind(customStore))(sid, sess)
+  
+  // Verify set was called with MAX_SAFE_INTEGER
+  expect(setSpy).toHaveBeenCalledWith(
+    expect.stringContaining(sid),
+    expect.any(String),
+    Number.MAX_SAFE_INTEGER
+  )
+  
+  // Get the session to verify it was stored correctly
+  const result = await promisify(customStore.get.bind(customStore))(sid)
+  expect(result).toEqual(sess)
+  
+  setSpy.mockRestore()
+  await client.disconnect()
+})
+
+

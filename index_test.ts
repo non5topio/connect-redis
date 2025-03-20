@@ -421,3 +421,154 @@ test("ioredis client scanIterator implementation", async () => {
   await client.disconnect()
 })
 
+
+test("handle session data with circular references", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "circular-ref-session"
+  
+  // Create session data with circular reference
+  const sess: any = {
+    cookie: {},
+    data: "test data"
+  }
+  sess.circular = sess // Create circular reference
+  
+  // Try to set the session (should fail due to circular reference)
+  const setCallback = vi.fn()
+  await store.set(sid, sess, setCallback)
+  
+  // Verify the error was passed to the callback
+  expect(setCallback).toHaveBeenCalledWith(expect.objectContaining({
+    message: expect.stringContaining("circular")
+  }))
+  
+  // Verify session doesn't exist
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+test("handle invalid serializer that throws during parse", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  // Create a custom serializer that throws during parse
+  const throwingSerializer = {
+    parse: () => {
+      throw new Error("Parse error")
+    },
+    stringify: (s: any) => JSON.stringify(s)
+  }
+  
+  const store = new RedisStore({
+    client,
+    serializer: throwingSerializer
+  })
+  
+  const sid = "throwing-serializer-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Set the session (uses stringify, which doesn't throw)
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Try to get the session (will use parse, which throws)
+  const getCallback = vi.fn()
+  await store.get(sid, getCallback)
+  
+  // Verify the error was passed to the callback
+  expect(getCallback).toHaveBeenCalledWith(expect.objectContaining({
+    message: "Parse error"
+  }))
+  
+  // Test all method with throwing serializer
+  const allCallback = vi.fn()
+  await store.all(allCallback)
+  
+  // Verify the error was passed to the callback
+  expect(allCallback).toHaveBeenCalledWith(expect.objectContaining({
+    message: expect.stringContaining("Parse error")
+  }))
+  
+  await client.disconnect()
+})
+
+
+test("handle session with extremely long session ID", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  
+  // Create an extremely long session ID (10,000+ characters)
+  const longSid = "x".repeat(10000)
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Set the session
+  await promisify(store.set.bind(store))(longSid, sess)
+  
+  // Get the session
+  const result = await promisify(store.get.bind(store))(longSid)
+  
+  // Verify the session was stored and retrieved correctly
+  expect(result).toEqual(sess)
+  
+  // Touch the session
+  await promisify(store.touch.bind(store))(longSid, sess)
+  
+  // Destroy the session
+  await promisify(store.destroy.bind(store))(longSid)
+  
+  // Verify session is gone
+  const afterDestroy = await promisify(store.get.bind(store))(longSid)
+  expect(afterDestroy).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+test("handle session with TTL value of 0", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  // Create a TTL function that returns 0
+  const zeroTtlFunction = () => 0
+  
+  const store = new RedisStore({
+    client,
+    ttl: zeroTtlFunction
+  })
+  
+  const sid = "zero-ttl-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Spy on destroy method
+  const destroySpy = vi.spyOn(store, 'destroy')
+  
+  // Set the session (should call destroy internally)
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Verify destroy was called
+  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+  
+  // Verify session doesn't exist
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  destroySpy.mockRestore()
+  await client.disconnect()
+})
+
