@@ -1842,3 +1842,117 @@ test("handle session with maximum TTL value", async () => {
 })
 
 
+
+test("set a session with undefined session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "undefined-sess-session"
+  const sess = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sess, setCallback)
+  
+  // Expect the callback to be called without error and no session stored
+  expect(setCallback).toHaveBeenCalledWith(null)
+  
+  // Verify session is not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("set a session with undefined session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "undefined-sess-session"
+  const sess = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sess, setCallback)
+  
+  // Expect the callback to be called without error and no session stored
+  expect(setCallback).toHaveBeenCalledWith(null)
+  
+  // Verify session is not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("initialize RedisStore with an invalid TTL type", () => {
+  // Attempt to initialize RedisStore with invalid TTL type
+  expect(() => {
+    new RedisStore({ client: createClient({url: `redis://localhost:${redisSrv.port}` }), ttl: "invalid_ttl" })
+  }).toThrow(/ttl must be a number or a function/)
+})
+
+
+
+test("set a session with undefined session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "undefined-sess-session"
+  const sess = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sess, setCallback)
+  
+  // Expect the callback to be called without error and no session stored
+  expect(setCallback).toHaveBeenCalledWith(null)
+  
+  // Verify session is not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("initialize RedisStore with an invalid TTL type", () => {
+  // Attempt to initialize RedisStore with invalid TTL type
+  expect(() => {
+    new RedisStore({ client: createClient({url: `redis://localhost:${redisSrv.port}` }), ttl: "invalid_ttl" })
+  }).toThrow(/ttl must be a number or a function/)
+})
+
+
+
+test("set a session with invalid session data format (non-object)", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "invalid-data-session"
+  const sess = "invalid-session-data"
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sess, setCallback)
+  
+  // Expect the callback to be called without error
+  expect(setCallback).toHaveBeenCalledWith(null)
+  
+  // Retrieve and verify the session is stored as a string
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toEqual(sess)
+  
+  await client.disconnect()
+})
+
+

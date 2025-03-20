@@ -572,3 +572,71 @@ test("handle session with TTL value of 0", async () => {
   await client.disconnect()
 })
 
+test("set a session with an expiry date exactly at the current time", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "immediate-expiry-session"
+  const sess = { cookie: { expires: new Date() }, data: "test" }
+  
+  // Spy on destroy method
+  const destroySpy = vi.spyOn(store, 'destroy')
+  
+  // Set the session
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Expect destroy to be called
+  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+  
+  // Verify session is not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  destroySpy.mockRestore()
+  await client.disconnect()
+})
+
+
+test("set a session with a non-string session ID", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = 12345
+  const sess = { cookie: {}, data: "test" }
+  
+  // Set the session
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Get the session using stringified SID
+  const result = await promisify(store.get.bind(store))("12345")
+  
+  // Expect the session to be retrieved correctly
+  expect(result).toEqual(sess)
+  
+  await client.disconnect()
+})
+
+
+test("set a session without the `cookie` field", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({client})
+  const sid = "no-cookie-session"
+  const sess = { data: "test data" }
+  
+  // Set the session
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Get the session
+  const result = await promisify(store.get.bind(store))(sid)
+  
+  // Expect the session to be stored with default TTL
+  expect(result).toEqual(sess)
+  
+  await client.disconnect()
+})
+
+
