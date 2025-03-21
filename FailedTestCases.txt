@@ -2112,3 +2112,281 @@ test("Attempt to set a session with undefined session ID", async () => {
 })
 
 
+
+test("set session with empty session ID", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = ""
+  const sessionData = {
+    cookie: {},
+    user: "testUser"
+  }
+  
+  // Attempt to set the session and expect an error
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Verify that an error was passed to the callback
+  expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  
+  // Ensure no session is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("set session with empty session ID", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = ""
+  const sessionData = {
+    cookie: {},
+    user: "testUser"
+  }
+  
+  // Attempt to set the session and expect an error
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Verify that an error was passed to the callback
+  expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  
+  // Ensure no session is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("set session with undefined session data", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = "undefined-session"
+  const sessionData = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Depending on implementation, either no error and treated as empty session or error thrown
+  if (sessionData === undefined) {
+    // Check if session is treated as empty
+    expect(setCallback).toHaveBeenCalledWith(null)
+    const retrievedSession = await promisify(store.get.bind(store))(sid)
+    expect(retrievedSession).toBeUndefined()
+  } else {
+    // If error is expected
+    expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  }
+  
+  // Ensure no invalid data is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("set session with empty session ID", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = ""
+  const sessionData = {
+    cookie: {},
+    user: "testUser"
+  }
+  
+  // Attempt to set the session and expect an error
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Verify that an error was passed to the callback
+  expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  
+  // Ensure no session is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("set session with undefined session data", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = "undefined-session"
+  const sessionData = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Depending on implementation, either no error and treated as empty session or error thrown
+  if (sessionData === undefined) {
+    // Check if session is treated as empty
+    expect(setCallback).toHaveBeenCalledWith(null)
+    const retrievedSession = await promisify(store.get.bind(store))(sid)
+    expect(retrievedSession).toBeUndefined()
+  } else {
+    // If error is expected
+    expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  }
+  
+  // Ensure no invalid data is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("initialize with serializer missing parse method", () => {
+  // Create a serializer missing the parse method
+  const invalidSerializer = {
+    stringify: (s: any) => JSON.stringify(s)
+  }
+  
+  // Create a valid Redis client mock
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn(),
+    expire: vi.fn(),
+    del: vi.fn(),
+    mget: vi.fn(),
+    scanIterator: vi.fn()
+  }
+  
+  // Expect constructor to throw an error due to invalid serializer
+  expect(() => {
+    new RedisStore({ client: mockClient, serializer: invalidSerializer })
+  }).toThrow(/serializer/i)
+})
+
+
+
+test("set session with empty session ID", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = ""
+  const sessionData = {
+    cookie: {},
+    user: "testUser"
+  }
+  
+  // Attempt to set the session and expect an error
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Verify that an error was passed to the callback
+  expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  
+  // Ensure no session is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("set session with undefined session data", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = "undefined-session"
+  const sessionData = undefined
+  
+  // Attempt to set the session
+  const setCallback = vi.fn()
+  await store.set(sid, sessionData, setCallback)
+  
+  // Depending on implementation, either no error and treated as empty session or error thrown
+  if (sessionData === undefined) {
+    // Check if session is treated as empty
+    expect(setCallback).toHaveBeenCalledWith(null)
+    const retrievedSession = await promisify(store.get.bind(store))(sid)
+    expect(retrievedSession).toBeUndefined()
+  } else {
+    // If error is expected
+    expect(setCallback).toHaveBeenCalledWith(expect.any(Error))
+  }
+  
+  // Ensure no invalid data is stored in Redis
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBeNull()
+  
+  await client.disconnect()
+})
+
+
+
+test("initialize with serializer missing parse method", () => {
+  // Create a serializer missing the parse method
+  const invalidSerializer = {
+    stringify: (s: any) => JSON.stringify(s)
+  }
+  
+  // Create a valid Redis client mock
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn(),
+    expire: vi.fn(),
+    del: vi.fn(),
+    mget: vi.fn(),
+    scanIterator: vi.fn()
+  }
+  
+  // Expect constructor to throw an error due to invalid serializer
+  expect(() => {
+    new RedisStore({ client: mockClient, serializer: invalidSerializer })
+  }).toThrow(/serializer/i)
+})
+
+
+
+test("initialize with ttl set to a string", () => {
+  // Create a valid Redis client mock
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn(),
+    expire: vi.fn(),
+    del: vi.fn(),
+    mget: vi.fn(),
+    scanIterator: vi.fn()
+  }
+  
+  // Expect constructor to throw a type error due to invalid ttl type
+  expect(() => {
+    new RedisStore({ client: mockClient, ttl: "invalid-ttl" })
+  }).toThrow(/ttl/i)
+})
+
+

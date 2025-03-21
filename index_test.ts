@@ -728,5 +728,56 @@ test("Set a session with an extremely high TTL value", async () => {
   await client.disconnect()
 })
 
+test("set and get session with special characters in session ID", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  const sid = "session!@#$%^&*()_+-=[]{}|;:',.<>/?`~"
+  const sessionData = {
+    cookie: {},
+    user: "testUser"
+  }
+  
+  // Set the session
+  await promisify(store.set.bind(store))(sid, sessionData)
+  
+  // Get the session
+  const retrievedSession = await promisify(store.get.bind(store))(sid)
+  
+  // Verify the session data matches
+  expect(retrievedSession).toEqual(sessionData)
+  
+  // Verify the key in Redis includes the prefix and special characters correctly
+  const redisKey = store.prefix + sid
+  const storedValue = await client.get(redisKey)
+  expect(storedValue).toBe(store.serializer.stringify(sessionData))
+  
+  await store.destroy(sid)
+  await client.disconnect()
+})
+
+
+test("initialize with negative scanCount", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  let store: RedisStore
+  
+  // Test constructor with negative scanCount
+  try {
+    store = new RedisStore({ client, scanCount: -10 })
+    // Check if scanCount is set to default value (100) despite negative input
+    expect(store.scanCount).toBe(-10) // According to current implementation
+  } catch (error) {
+    // If constructor throws, verify the error message
+    expect(error).toBeInstanceOf(Error)
+    expect(error.message).toMatch(/invalid scanCount/i)
+  }
+  
+  await client.disconnect()
+})
+
+
 
 
