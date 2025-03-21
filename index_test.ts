@@ -639,4 +639,94 @@ test("set a session without the `cookie` field", async () => {
   await client.disconnect()
 })
 
+test("Attempt to inject malicious scripts in session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  
+  const sid = "malicious-session"
+  const sess = {
+    cookie: {},
+    data: "<script>alert('XSS')</script>"
+  }
+  
+  // Set the malicious session
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Retrieve the session and verify data integrity
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toEqual(sess)
+  expect(result?.data).toBe("<script>alert('XSS')</script>")
+  
+  await store.destroy(sid)
+  await client.disconnect()
+})
+
+
+test("Initialize RedisStore with an empty prefix", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({
+    client,
+    prefix: ""
+  })
+  
+  expect(store.prefix).toBe("")
+  
+  const sid = "no-prefix-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Set the session
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Retrieve the session directly without prefix
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toEqual(sess)
+  
+  // Ensure the key in Redis does not have any prefix
+  const storedValue = await client.get(sid)
+  expect(storedValue).toBeDefined()
+  
+  await store.destroy(sid)
+  await client.disconnect()
+})
+
+
+test("Set a session with an extremely high TTL value", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const extremelyHighTtl = 3153600000 // 100 years in seconds
+  
+  const store = new RedisStore({
+    client,
+    ttl: extremelyHighTtl
+  })
+  
+  const sid = "high-ttl-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Set the session with high TTL
+  await promisify(store.set.bind(store))(sid, sess)
+  
+  // Retrieve the session and verify
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toEqual(sess)
+  
+  // Optionally, check the TTL in Redis (if possible)
+  const ttl = await client.ttl(store.prefix + sid)
+  expect(ttl).toBe(extremelyHighTtl)
+  
+  await client.disconnect()
+})
+
+
 

@@ -1956,3 +1956,159 @@ test("set a session with invalid session data format (non-object)", async () => 
 })
 
 
+
+test("Set a session with TTL function returning non-integer value", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  // Define a TTL function that returns a non-integer value
+  const ttlFunction = () => "invalid_ttl" as unknown as number
+  
+  const store = new RedisStore({
+    client,
+    ttl: ttlFunction
+  })
+  
+  const sid = "non-integer-ttl-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("Set a session with TTL function returning non-integer value", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  // Define a TTL function that returns a non-integer value
+  const ttlFunction = () => "invalid_ttl" as unknown as number
+  
+  const store = new RedisStore({
+    client,
+    ttl: ttlFunction
+  })
+  
+  const sid = "non-integer-ttl-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("Attempt to set a session with non-object session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  
+  const sid = "non-object-session"
+  const sess = "this should be an object" as unknown as SessionData
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("Set a session with TTL function returning non-integer value", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  // Define a TTL function that returns a non-integer value
+  const ttlFunction = () => "invalid_ttl" as unknown as number
+  
+  const store = new RedisStore({
+    client,
+    ttl: ttlFunction
+  })
+  
+  const sid = "non-integer-ttl-session"
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("Attempt to set a session with non-object session data", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  
+  const sid = "non-object-session"
+  const sess = "this should be an object" as unknown as SessionData
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
+
+test("Attempt to set a session with undefined session ID", async () => {
+  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+  await client.connect()
+  
+  const store = new RedisStore({ client })
+  
+  const sid = undefined as unknown as string
+  const sess = {
+    cookie: {},
+    data: "test data"
+  }
+  
+  // Attempt to set the session and expect an error
+  await expect(promisify(store.set.bind(store))(sid, sess)).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await promisify(store.get.bind(store))(sid)
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
+
