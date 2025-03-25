@@ -2390,3 +2390,60 @@ test("initialize with ttl set to a string", () => {
 })
 
 
+
+test("initialize RedisStore with a client missing required methods", () => {
+  const incompleteClient = {
+    get: vi.fn(),
+    // Missing set, del, expire, mget, scanIterator methods
+  }
+  expect(() => {
+    new RedisStore({ client: incompleteClient })
+  }).toThrow()
+})
+
+
+test("initialize RedisStore with a client missing required methods", () => {
+  const incompleteClient = {
+    get: vi.fn(),
+    // Missing set, del, expire, mget, scanIterator methods
+  }
+  expect(() => {
+    new RedisStore({ client: incompleteClient })
+  }).toThrow()
+})
+
+
+test("set a session where TTL function returns a non-integer value", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  
+  // Define a TTL function that returns a non-integer value
+  const ttlFunction = (sess: SessionData) => "invalid-ttl" as any
+  
+  const store = new RedisStore({
+    client,
+    ttl: ttlFunction
+  })
+  const sid = "non-integer-ttl-session"
+  const sess = { cookie: {}, data: "test-data" }
+  
+  // Attempt to set the session and expect an error
+  await expect(new Promise<void>((resolve, reject) => {
+    store.set(sid, sess, (err) => {
+      if (err) reject(err)
+      else resolve()
+    })
+  })).rejects.toThrow()
+  
+  // Verify that the session was not stored
+  const result = await new Promise<SessionData | undefined>((resolve, reject) => {
+    store.get(sid, (err, data) => {
+      if (err) reject(err)
+      else resolve(data)
+    })
+  })
+  expect(result).toBeUndefined()
+  
+  await client.disconnect()
+})
+
