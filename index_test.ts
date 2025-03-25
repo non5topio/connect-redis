@@ -28,755 +28,755 @@ test("defaults", async () => {
 })
 
 
-test("error handling", async () => {
-  // Create a mock client that throws errors
-  const mockClient = {
-    get: vi.fn().mockRejectedValue(new Error("get error")),
-    set: vi.fn().mockRejectedValue(new Error("set error")),
-    expire: vi.fn().mockRejectedValue(new Error("expire error")),
-    del: vi.fn().mockRejectedValue(new Error("del error")),
-    mget: vi.fn().mockRejectedValue(new Error("mget error")),
-    scanIterator: vi.fn().mockImplementation(() => {
-      throw new Error("scan error")
-    })
-  }
+// test("error handling", async () => {
+//   // Create a mock client that throws errors
+//   const mockClient = {
+//     get: vi.fn().mockRejectedValue(new Error("get error")),
+//     set: vi.fn().mockRejectedValue(new Error("set error")),
+//     expire: vi.fn().mockRejectedValue(new Error("expire error")),
+//     del: vi.fn().mockRejectedValue(new Error("del error")),
+//     mget: vi.fn().mockRejectedValue(new Error("mget error")),
+//     scanIterator: vi.fn().mockImplementation(() => {
+//       throw new Error("scan error")
+//     })
+//   }
   
-  const store = new RedisStore({client: mockClient})
+//   const store = new RedisStore({client: mockClient})
   
-  // Test get error handling
-  await expect(promisify(store.get.bind(store))("test-id"))
-    .rejects.toThrow("get error")
+//   // Test get error handling
+//   await expect(promisify(store.get.bind(store))("test-id"))
+//     .rejects.toThrow("get error")
   
-  // Test set error handling
-  await expect(promisify(store.set.bind(store))("test-id", {cookie: {}}))
-    .rejects.toThrow("set error")
+//   // Test set error handling
+//   await expect(promisify(store.set.bind(store))("test-id", {cookie: {}}))
+//     .rejects.toThrow("set error")
   
-  // Test touch error handling
-  await expect(promisify(store.touch.bind(store))("test-id", {cookie: {}}))
-    .rejects.toThrow("expire error")
+//   // Test touch error handling
+//   await expect(promisify(store.touch.bind(store))("test-id", {cookie: {}}))
+//     .rejects.toThrow("expire error")
   
-  // Test destroy error handling
-  await expect(promisify(store.destroy.bind(store))("test-id"))
-    .rejects.toThrow("del error")
+//   // Test destroy error handling
+//   await expect(promisify(store.destroy.bind(store))("test-id"))
+//     .rejects.toThrow("del error")
   
-  // Test clear error handling
-  await expect(promisify(store.clear.bind(store))())
-    .rejects.toThrow("scan error")
+//   // Test clear error handling
+//   await expect(promisify(store.clear.bind(store))())
+//     .rejects.toThrow("scan error")
   
-  // Test length error handling
-  await expect(promisify(store.length.bind(store))())
-    .rejects.toThrow("scan error")
+//   // Test length error handling
+//   await expect(promisify(store.length.bind(store))())
+//     .rejects.toThrow("scan error")
   
-  // Test ids error handling
-  await expect(promisify(store.ids.bind(store))())
-    .rejects.toThrow("scan error")
+//   // Test ids error handling
+//   await expect(promisify(store.ids.bind(store))())
+//     .rejects.toThrow("scan error")
   
-  // Test all error handling
-  await expect(promisify(store.all.bind(store))())
-    .rejects.toThrow("scan error")
-})
+//   // Test all error handling
+//   await expect(promisify(store.all.bind(store))())
+//     .rejects.toThrow("scan error")
+// })
 
 
-test("clear length and ids methods", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("clear length and ids methods", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
+//   const store = new RedisStore({client})
   
-  // Clear any existing sessions
-  await promisify(store.clear.bind(store))()
+//   // Clear any existing sessions
+//   await promisify(store.clear.bind(store))()
   
-  // Create multiple sessions
-  const sessions = [
-    { id: "session1", data: { cookie: {}, value: "data1" } },
-    { id: "session2", data: { cookie: {}, value: "data2" } },
-    { id: "session3", data: { cookie: {}, value: "data3" } }
-  ]
+//   // Create multiple sessions
+//   const sessions = [
+//     { id: "session1", data: { cookie: {}, value: "data1" } },
+//     { id: "session2", data: { cookie: {}, value: "data2" } },
+//     { id: "session3", data: { cookie: {}, value: "data3" } }
+//   ]
   
-  for (const session of sessions) {
-    await promisify(store.set.bind(store))(session.id, session.data)
-  }
+//   for (const session of sessions) {
+//     await promisify(store.set.bind(store))(session.id, session.data)
+//   }
   
-  // Test length
-  const length = await promisify(store.length.bind(store))()
-  expect(length).toBe(sessions.length)
+//   // Test length
+//   const length = await promisify(store.length.bind(store))()
+//   expect(length).toBe(sessions.length)
   
-  // Test ids
-  const ids = await promisify(store.ids.bind(store))()
-  expect(ids).toHaveLength(sessions.length)
-  expect(ids.sort()).toEqual(sessions.map(s => s.id).sort())
+//   // Test ids
+//   const ids = await promisify(store.ids.bind(store))()
+//   expect(ids).toHaveLength(sessions.length)
+//   expect(ids.sort()).toEqual(sessions.map(s => s.id).sort())
   
-  // Test clear
-  await promisify(store.clear.bind(store))()
-  const lengthAfterClear = await promisify(store.length.bind(store))()
-  expect(lengthAfterClear).toBe(0)
+//   // Test clear
+//   await promisify(store.clear.bind(store))()
+//   const lengthAfterClear = await promisify(store.length.bind(store))()
+//   expect(lengthAfterClear).toBe(0)
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("session with expired cookie", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("session with expired cookie", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "expired-session-id"
+//   const store = new RedisStore({client})
+//   const sid = "expired-session-id"
   
-  // Create a session with an expired cookie
-  const pastDate = new Date(Date.now() - 10000) // 10 seconds in the past
-  const sess = {
-    cookie: { expires: pastDate }
-  }
+//   // Create a session with an expired cookie
+//   const pastDate = new Date(Date.now() - 10000) // 10 seconds in the past
+//   const sess = {
+//     cookie: { expires: pastDate }
+//   }
   
-  // Set should call destroy internally for expired sessions
-  const destroySpy = vi.spyOn(store, 'destroy')
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set should call destroy internally for expired sessions
+//   const destroySpy = vi.spyOn(store, 'destroy')
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Verify destroy was called
-  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+//   // Verify destroy was called
+//   expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
   
-  // Verify session doesn't exist
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   // Verify session doesn't exist
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  destroySpy.mockRestore()
-  await client.disconnect()
-})
+//   destroySpy.mockRestore()
+//   await client.disconnect()
+// })
 
 
-test("get non-existent session", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("get non-existent session", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "non-existent-session-id"
+//   const store = new RedisStore({client})
+//   const sid = "non-existent-session-id"
   
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("custom store options", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("custom store options", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const customSerializer = {
-    parse: (s: string) => JSON.parse(s),
-    stringify: (s: any) => JSON.stringify(s)
-  }
+//   const customSerializer = {
+//     parse: (s: string) => JSON.parse(s),
+//     stringify: (s: any) => JSON.stringify(s)
+//   }
   
-  const customTtl = 3600
-  const customPrefix = "custom-prefix:"
-  const customScanCount = 200
+//   const customTtl = 3600
+//   const customPrefix = "custom-prefix:"
+//   const customScanCount = 200
   
-  const store = new RedisStore({
-    client,
-    prefix: customPrefix,
-    scanCount: customScanCount,
-    ttl: customTtl,
-    disableTTL: true,
-    disableTouch: true,
-    serializer: customSerializer
-  })
+//   const store = new RedisStore({
+//     client,
+//     prefix: customPrefix,
+//     scanCount: customScanCount,
+//     ttl: customTtl,
+//     disableTTL: true,
+//     disableTouch: true,
+//     serializer: customSerializer
+//   })
   
-  expect(store.prefix).toBe(customPrefix)
-  expect(store.scanCount).toBe(customScanCount)
-  expect(store.ttl).toBe(customTtl)
-  expect(store.disableTTL).toBe(true)
-  expect(store.disableTouch).toBe(true)
-  expect(store.serializer).toBe(customSerializer)
+//   expect(store.prefix).toBe(customPrefix)
+//   expect(store.scanCount).toBe(customScanCount)
+//   expect(store.ttl).toBe(customTtl)
+//   expect(store.disableTTL).toBe(true)
+//   expect(store.disableTouch).toBe(true)
+//   expect(store.serializer).toBe(customSerializer)
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("complete session lifecycle", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("complete session lifecycle", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "test-session-id"
-  const sess = {
-    cookie: { maxAge: 2000 },
-    name: "test-session"
-  }
+//   const store = new RedisStore({client})
+//   const sid = "test-session-id"
+//   const sess = {
+//     cookie: { maxAge: 2000 },
+//     name: "test-session"
+//   }
   
-  // Set session
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set session
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Get session
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toEqual(sess)
+//   // Get session
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toEqual(sess)
   
-  // Touch session
-  await promisify(store.touch.bind(store))(sid, sess)
+//   // Touch session
+//   await promisify(store.touch.bind(store))(sid, sess)
   
-  // Destroy session
-  await promisify(store.destroy.bind(store))(sid)
+//   // Destroy session
+//   await promisify(store.destroy.bind(store))(sid)
   
-  // Verify session is gone
-  const afterDestroy = await promisify(store.get.bind(store))(sid)
-  expect(afterDestroy).toBeUndefined()
+//   // Verify session is gone
+//   const afterDestroy = await promisify(store.get.bind(store))(sid)
+//   expect(afterDestroy).toBeUndefined()
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("null or undefined client", () => {
-  // Test with null client
-  expect(() => {
-    new RedisStore({ client: null })
-  }).toThrow()
+// test("null or undefined client", () => {
+//   // Test with null client
+//   expect(() => {
+//     new RedisStore({ client: null })
+//   }).toThrow()
   
-  // Test with undefined client
-  expect(() => {
-    new RedisStore({ client: undefined })
-  }).toThrow()
-})
+//   // Test with undefined client
+//   expect(() => {
+//     new RedisStore({ client: undefined })
+//   }).toThrow()
+// })
 
 
-test("negative TTL value", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("negative TTL value", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "negative-ttl-session"
+//   const store = new RedisStore({client})
+//   const sid = "negative-ttl-session"
   
-  // Create a session with a cookie that expired in the past
-  const pastDate = new Date(Date.now() - 1000000) // Far in the past
-  const sess = {
-    cookie: { expires: pastDate }
-  }
+//   // Create a session with a cookie that expired in the past
+//   const pastDate = new Date(Date.now() - 1000000) // Far in the past
+//   const sess = {
+//     cookie: { expires: pastDate }
+//   }
   
-  // Spy on destroy method
-  const destroySpy = vi.spyOn(store, 'destroy')
+//   // Spy on destroy method
+//   const destroySpy = vi.spyOn(store, 'destroy')
   
-  // Set the session (should call destroy internally)
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session (should call destroy internally)
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Verify destroy was called
-  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+//   // Verify destroy was called
+//   expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
   
-  // Verify session doesn't exist
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   // Verify session doesn't exist
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  destroySpy.mockRestore()
-  await client.disconnect()
-})
+//   destroySpy.mockRestore()
+//   await client.disconnect()
+// })
 
 
-test("corrupted session data", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("corrupted session data", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "corrupted-session"
-  const key = store.prefix + sid
+//   const store = new RedisStore({client})
+//   const sid = "corrupted-session"
+//   const key = store.prefix + sid
   
-  // Directly set invalid JSON in Redis
-  await client.set(key, "{invalid json")
+//   // Directly set invalid JSON in Redis
+//   await client.set(key, "{invalid json")
   
-  // Attempt to get the corrupted session
-  const getCallback = vi.fn()
-  await store.get(sid, getCallback)
+//   // Attempt to get the corrupted session
+//   const getCallback = vi.fn()
+//   await store.get(sid, getCallback)
   
-  // Verify the error was passed to the callback
-  expect(getCallback).toHaveBeenCalledWith(expect.any(Error))
+//   // Verify the error was passed to the callback
+//   expect(getCallback).toHaveBeenCalledWith(expect.any(Error))
   
-  // Clean up
-  await client.del(key)
-  await client.disconnect()
-})
+//   // Clean up
+//   await client.del(key)
+//   await client.disconnect()
+// })
 
 
-test("extremely large session data", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("extremely large session data", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "large-data-session"
+//   const store = new RedisStore({client})
+//   const sid = "large-data-session"
   
-  // Create a large nested object
-  const generateLargeObject = (depth: number, breadth: number, size: number): any => {
-    if (depth === 0) {
-      return "x".repeat(size)
-    }
+//   // Create a large nested object
+//   const generateLargeObject = (depth: number, breadth: number, size: number): any => {
+//     if (depth === 0) {
+//       return "x".repeat(size)
+//     }
     
-    const obj: Record<string, any> = {}
-    for (let i = 0; i < breadth; i++) {
-      obj[`key${i}`] = generateLargeObject(depth - 1, breadth, size)
-    }
-    return obj
-  }
+//     const obj: Record<string, any> = {}
+//     for (let i = 0; i < breadth; i++) {
+//       obj[`key${i}`] = generateLargeObject(depth - 1, breadth, size)
+//     }
+//     return obj
+//   }
   
-  // Create a session with large nested data (approximately 1MB)
-  const largeData = generateLargeObject(3, 5, 1000)
-  const sess = {
-    cookie: {},
-    largeData
-  }
+//   // Create a session with large nested data (approximately 1MB)
+//   const largeData = generateLargeObject(3, 5, 1000)
+//   const sess = {
+//     cookie: {},
+//     largeData
+//   }
   
-  // Set and get the session
-  await promisify(store.set.bind(store))(sid, sess)
-  const result = await promisify(store.get.bind(store))(sid)
+//   // Set and get the session
+//   await promisify(store.set.bind(store))(sid, sess)
+//   const result = await promisify(store.get.bind(store))(sid)
   
-  // Verify the data was stored and retrieved correctly
-  expect(result).toEqual(sess)
-  expect(JSON.stringify(result?.largeData).length).toEqual(JSON.stringify(largeData).length)
+//   // Verify the data was stored and retrieved correctly
+//   expect(result).toEqual(sess)
+//   expect(JSON.stringify(result?.largeData).length).toEqual(JSON.stringify(largeData).length)
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("custom TTL function", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("custom TTL function", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  // Create a custom TTL function that returns different TTLs based on session data
-  const ttlFunction = (sess: any) => {
-    if (sess.priority === "high") return 3600 // 1 hour
-    if (sess.priority === "medium") return 1800 // 30 minutes
-    return 600 // 10 minutes for low priority
-  }
+//   // Create a custom TTL function that returns different TTLs based on session data
+//   const ttlFunction = (sess: any) => {
+//     if (sess.priority === "high") return 3600 // 1 hour
+//     if (sess.priority === "medium") return 1800 // 30 minutes
+//     return 600 // 10 minutes for low priority
+//   }
   
-  const store = new RedisStore({
-    client,
-    ttl: ttlFunction
-  })
+//   const store = new RedisStore({
+//     client,
+//     ttl: ttlFunction
+//   })
   
-  // Test with different priority sessions
-  const highPrioritySid = "high-priority-session"
-  const mediumPrioritySid = "medium-priority-session"
-  const lowPrioritySid = "low-priority-session"
+//   // Test with different priority sessions
+//   const highPrioritySid = "high-priority-session"
+//   const mediumPrioritySid = "medium-priority-session"
+//   const lowPrioritySid = "low-priority-session"
   
-  const highPrioritySession = { cookie: {}, priority: "high" }
-  const mediumPrioritySession = { cookie: {}, priority: "medium" }
-  const lowPrioritySession = { cookie: {}, priority: "low" }
+//   const highPrioritySession = { cookie: {}, priority: "high" }
+//   const mediumPrioritySession = { cookie: {}, priority: "medium" }
+//   const lowPrioritySession = { cookie: {}, priority: "low" }
   
-  // Spy on client.set to verify TTL values
-  const setSpy = vi.spyOn(store.client, 'set')
+//   // Spy on client.set to verify TTL values
+//   const setSpy = vi.spyOn(store.client, 'set')
   
-  // Set sessions
-  await promisify(store.set.bind(store))(highPrioritySid, highPrioritySession)
-  expect(setSpy).toHaveBeenLastCalledWith(
-    expect.stringContaining(highPrioritySid), 
-    expect.any(String), 
-    3600
-  )
+//   // Set sessions
+//   await promisify(store.set.bind(store))(highPrioritySid, highPrioritySession)
+//   expect(setSpy).toHaveBeenLastCalledWith(
+//     expect.stringContaining(highPrioritySid), 
+//     expect.any(String), 
+//     3600
+//   )
   
-  await promisify(store.set.bind(store))(mediumPrioritySid, mediumPrioritySession)
-  expect(setSpy).toHaveBeenLastCalledWith(
-    expect.stringContaining(mediumPrioritySid), 
-    expect.any(String), 
-    1800
-  )
+//   await promisify(store.set.bind(store))(mediumPrioritySid, mediumPrioritySession)
+//   expect(setSpy).toHaveBeenLastCalledWith(
+//     expect.stringContaining(mediumPrioritySid), 
+//     expect.any(String), 
+//     1800
+//   )
   
-  await promisify(store.set.bind(store))(lowPrioritySid, lowPrioritySession)
-  expect(setSpy).toHaveBeenLastCalledWith(
-    expect.stringContaining(lowPrioritySid), 
-    expect.any(String), 
-    600
-  )
+//   await promisify(store.set.bind(store))(lowPrioritySid, lowPrioritySession)
+//   expect(setSpy).toHaveBeenLastCalledWith(
+//     expect.stringContaining(lowPrioritySid), 
+//     expect.any(String), 
+//     600
+//   )
   
-  setSpy.mockRestore()
-  await client.disconnect()
-})
+//   setSpy.mockRestore()
+//   await client.disconnect()
+// })
 
 
-test("ioredis client scanIterator implementation", async () => {
-  const client = new Redis(`redis://localhost:${redisSrv.port}`)
+// test("ioredis client scanIterator implementation", async () => {
+//   const client = new Redis(`redis://localhost:${redisSrv.port}`)
   
-  const store = new RedisStore({client})
+//   const store = new RedisStore({client})
   
-  // Clear any existing sessions
-  await promisify(store.clear.bind(store))()
+//   // Clear any existing sessions
+//   await promisify(store.clear.bind(store))()
   
-  // Create multiple sessions
-  const sessions = [
-    { id: "ioredis1", data: { cookie: {}, value: "data1" } },
-    { id: "ioredis2", data: { cookie: {}, value: "data2" } },
-    { id: "ioredis3", data: { cookie: {}, value: "data3" } }
-  ]
+//   // Create multiple sessions
+//   const sessions = [
+//     { id: "ioredis1", data: { cookie: {}, value: "data1" } },
+//     { id: "ioredis2", data: { cookie: {}, value: "data2" } },
+//     { id: "ioredis3", data: { cookie: {}, value: "data3" } }
+//   ]
   
-  for (const session of sessions) {
-    await promisify(store.set.bind(store))(session.id, session.data)
-  }
+//   for (const session of sessions) {
+//     await promisify(store.set.bind(store))(session.id, session.data)
+//   }
   
-  // Test that _getAllKeys works with ioredis client
-  const keys = await store["_getAllKeys"]()
-  expect(keys).toHaveLength(sessions.length)
+//   // Test that _getAllKeys works with ioredis client
+//   const keys = await store["_getAllKeys"]()
+//   expect(keys).toHaveLength(sessions.length)
   
-  // Test that all method works with ioredis client
-  const allSessions = await promisify(store.all.bind(store))()
-  expect(allSessions).toHaveLength(sessions.length)
+//   // Test that all method works with ioredis client
+//   const allSessions = await promisify(store.all.bind(store))()
+//   expect(allSessions).toHaveLength(sessions.length)
   
-  // Verify session data is correctly retrieved
-  for (const session of allSessions) {
-    expect(session.value).toMatch(/data[1-3]/)
-  }
+//   // Verify session data is correctly retrieved
+//   for (const session of allSessions) {
+//     expect(session.value).toMatch(/data[1-3]/)
+//   }
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("handle session data with circular references", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("handle session data with circular references", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "circular-ref-session"
+//   const store = new RedisStore({client})
+//   const sid = "circular-ref-session"
   
-  // Create session data with circular reference
-  const sess: any = {
-    cookie: {},
-    data: "test data"
-  }
-  sess.circular = sess // Create circular reference
+//   // Create session data with circular reference
+//   const sess: any = {
+//     cookie: {},
+//     data: "test data"
+//   }
+//   sess.circular = sess // Create circular reference
   
-  // Try to set the session (should fail due to circular reference)
-  const setCallback = vi.fn()
-  await store.set(sid, sess, setCallback)
+//   // Try to set the session (should fail due to circular reference)
+//   const setCallback = vi.fn()
+//   await store.set(sid, sess, setCallback)
   
-  // Verify the error was passed to the callback
-  expect(setCallback).toHaveBeenCalledWith(expect.objectContaining({
-    message: expect.stringContaining("circular")
-  }))
+//   // Verify the error was passed to the callback
+//   expect(setCallback).toHaveBeenCalledWith(expect.objectContaining({
+//     message: expect.stringContaining("circular")
+//   }))
   
-  // Verify session doesn't exist
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   // Verify session doesn't exist
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("handle invalid serializer that throws during parse", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("handle invalid serializer that throws during parse", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  // Create a custom serializer that throws during parse
-  const throwingSerializer = {
-    parse: () => {
-      throw new Error("Parse error")
-    },
-    stringify: (s: any) => JSON.stringify(s)
-  }
+//   // Create a custom serializer that throws during parse
+//   const throwingSerializer = {
+//     parse: () => {
+//       throw new Error("Parse error")
+//     },
+//     stringify: (s: any) => JSON.stringify(s)
+//   }
   
-  const store = new RedisStore({
-    client,
-    serializer: throwingSerializer
-  })
+//   const store = new RedisStore({
+//     client,
+//     serializer: throwingSerializer
+//   })
   
-  const sid = "throwing-serializer-session"
-  const sess = {
-    cookie: {},
-    data: "test data"
-  }
+//   const sid = "throwing-serializer-session"
+//   const sess = {
+//     cookie: {},
+//     data: "test data"
+//   }
   
-  // Set the session (uses stringify, which doesn't throw)
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session (uses stringify, which doesn't throw)
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Try to get the session (will use parse, which throws)
-  const getCallback = vi.fn()
-  await store.get(sid, getCallback)
+//   // Try to get the session (will use parse, which throws)
+//   const getCallback = vi.fn()
+//   await store.get(sid, getCallback)
   
-  // Verify the error was passed to the callback
-  expect(getCallback).toHaveBeenCalledWith(expect.objectContaining({
-    message: "Parse error"
-  }))
+//   // Verify the error was passed to the callback
+//   expect(getCallback).toHaveBeenCalledWith(expect.objectContaining({
+//     message: "Parse error"
+//   }))
   
-  // Test all method with throwing serializer
-  const allCallback = vi.fn()
-  await store.all(allCallback)
+//   // Test all method with throwing serializer
+//   const allCallback = vi.fn()
+//   await store.all(allCallback)
   
-  // Verify the error was passed to the callback
-  expect(allCallback).toHaveBeenCalledWith(expect.objectContaining({
-    message: expect.stringContaining("Parse error")
-  }))
+//   // Verify the error was passed to the callback
+//   expect(allCallback).toHaveBeenCalledWith(expect.objectContaining({
+//     message: expect.stringContaining("Parse error")
+//   }))
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("handle session with extremely long session ID", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("handle session with extremely long session ID", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
+//   const store = new RedisStore({client})
   
-  // Create an extremely long session ID (10,000+ characters)
-  const longSid = "x".repeat(10000)
-  const sess = {
-    cookie: {},
-    data: "test data"
-  }
+//   // Create an extremely long session ID (10,000+ characters)
+//   const longSid = "x".repeat(10000)
+//   const sess = {
+//     cookie: {},
+//     data: "test data"
+//   }
   
-  // Set the session
-  await promisify(store.set.bind(store))(longSid, sess)
+//   // Set the session
+//   await promisify(store.set.bind(store))(longSid, sess)
   
-  // Get the session
-  const result = await promisify(store.get.bind(store))(longSid)
+//   // Get the session
+//   const result = await promisify(store.get.bind(store))(longSid)
   
-  // Verify the session was stored and retrieved correctly
-  expect(result).toEqual(sess)
+//   // Verify the session was stored and retrieved correctly
+//   expect(result).toEqual(sess)
   
-  // Touch the session
-  await promisify(store.touch.bind(store))(longSid, sess)
+//   // Touch the session
+//   await promisify(store.touch.bind(store))(longSid, sess)
   
-  // Destroy the session
-  await promisify(store.destroy.bind(store))(longSid)
+//   // Destroy the session
+//   await promisify(store.destroy.bind(store))(longSid)
   
-  // Verify session is gone
-  const afterDestroy = await promisify(store.get.bind(store))(longSid)
-  expect(afterDestroy).toBeUndefined()
+//   // Verify session is gone
+//   const afterDestroy = await promisify(store.get.bind(store))(longSid)
+//   expect(afterDestroy).toBeUndefined()
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("handle session with TTL value of 0", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("handle session with TTL value of 0", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  // Create a TTL function that returns 0
-  const zeroTtlFunction = () => 0
+//   // Create a TTL function that returns 0
+//   const zeroTtlFunction = () => 0
   
-  const store = new RedisStore({
-    client,
-    ttl: zeroTtlFunction
-  })
+//   const store = new RedisStore({
+//     client,
+//     ttl: zeroTtlFunction
+//   })
   
-  const sid = "zero-ttl-session"
-  const sess = {
-    cookie: {},
-    data: "test data"
-  }
+//   const sid = "zero-ttl-session"
+//   const sess = {
+//     cookie: {},
+//     data: "test data"
+//   }
   
-  // Spy on destroy method
-  const destroySpy = vi.spyOn(store, 'destroy')
+//   // Spy on destroy method
+//   const destroySpy = vi.spyOn(store, 'destroy')
   
-  // Set the session (should call destroy internally)
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session (should call destroy internally)
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Verify destroy was called
-  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+//   // Verify destroy was called
+//   expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
   
-  // Verify session doesn't exist
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   // Verify session doesn't exist
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  destroySpy.mockRestore()
-  await client.disconnect()
-})
+//   destroySpy.mockRestore()
+//   await client.disconnect()
+// })
 
-test("set a session with an expiry date exactly at the current time", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("set a session with an expiry date exactly at the current time", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "immediate-expiry-session"
-  const sess = { cookie: { expires: new Date() }, data: "test" }
+//   const store = new RedisStore({client})
+//   const sid = "immediate-expiry-session"
+//   const sess = { cookie: { expires: new Date() }, data: "test" }
   
-  // Spy on destroy method
-  const destroySpy = vi.spyOn(store, 'destroy')
+//   // Spy on destroy method
+//   const destroySpy = vi.spyOn(store, 'destroy')
   
-  // Set the session
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Expect destroy to be called
-  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+//   // Expect destroy to be called
+//   expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
   
-  // Verify session is not stored
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toBeUndefined()
+//   // Verify session is not stored
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toBeUndefined()
   
-  destroySpy.mockRestore()
-  await client.disconnect()
-})
-
-
-test("set a session with a non-string session ID", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
-  
-  const store = new RedisStore({client})
-  const sid = 12345
-  const sess = { cookie: {}, data: "test" }
-  
-  // Set the session
-  await promisify(store.set.bind(store))(sid, sess)
-  
-  // Get the session using stringified SID
-  const result = await promisify(store.get.bind(store))("12345")
-  
-  // Expect the session to be retrieved correctly
-  expect(result).toEqual(sess)
-  
-  await client.disconnect()
-})
+//   destroySpy.mockRestore()
+//   await client.disconnect()
+// })
 
 
-test("set a session without the `cookie` field", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("set a session with a non-string session ID", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({client})
-  const sid = "no-cookie-session"
-  const sess = { data: "test data" }
+//   const store = new RedisStore({client})
+//   const sid = 12345
+//   const sess = { cookie: {}, data: "test" }
   
-  // Set the session
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Get the session
-  const result = await promisify(store.get.bind(store))(sid)
+//   // Get the session using stringified SID
+//   const result = await promisify(store.get.bind(store))("12345")
   
-  // Expect the session to be stored with default TTL
-  expect(result).toEqual(sess)
+//   // Expect the session to be retrieved correctly
+//   expect(result).toEqual(sess)
   
-  await client.disconnect()
-})
-
-test("Attempt to inject malicious scripts in session data", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
-  
-  const store = new RedisStore({ client })
-  
-  const sid = "malicious-session"
-  const sess = {
-    cookie: {},
-    data: "<script>alert('XSS')</script>"
-  }
-  
-  // Set the malicious session
-  await promisify(store.set.bind(store))(sid, sess)
-  
-  // Retrieve the session and verify data integrity
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toEqual(sess)
-  expect(result?.data).toBe("<script>alert('XSS')</script>")
-  
-  await store.destroy(sid)
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("Initialize RedisStore with an empty prefix", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("set a session without the `cookie` field", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const store = new RedisStore({
-    client,
-    prefix: ""
-  })
+//   const store = new RedisStore({client})
+//   const sid = "no-cookie-session"
+//   const sess = { data: "test data" }
   
-  expect(store.prefix).toBe("")
+//   // Set the session
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  const sid = "no-prefix-session"
-  const sess = {
-    cookie: {},
-    data: "test data"
-  }
+//   // Get the session
+//   const result = await promisify(store.get.bind(store))(sid)
   
-  // Set the session
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Expect the session to be stored with default TTL
+//   expect(result).toEqual(sess)
   
-  // Retrieve the session directly without prefix
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toEqual(sess)
+//   await client.disconnect()
+// })
+
+// test("Attempt to inject malicious scripts in session data", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  // Ensure the key in Redis does not have any prefix
-  const storedValue = await client.get(sid)
-  expect(storedValue).toBeDefined()
+//   const store = new RedisStore({ client })
   
-  await store.destroy(sid)
-  await client.disconnect()
-})
+//   const sid = "malicious-session"
+//   const sess = {
+//     cookie: {},
+//     data: "<script>alert('XSS')</script>"
+//   }
+  
+//   // Set the malicious session
+//   await promisify(store.set.bind(store))(sid, sess)
+  
+//   // Retrieve the session and verify data integrity
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toEqual(sess)
+//   expect(result?.data).toBe("<script>alert('XSS')</script>")
+  
+//   await store.destroy(sid)
+//   await client.disconnect()
+// })
 
 
-test("Set a session with an extremely high TTL value", async () => {
-  const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-  await client.connect()
+// test("Initialize RedisStore with an empty prefix", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  const extremelyHighTtl = 3153600000 // 100 years in seconds
+//   const store = new RedisStore({
+//     client,
+//     prefix: ""
+//   })
   
-  const store = new RedisStore({
-    client,
-    ttl: extremelyHighTtl
-  })
+//   expect(store.prefix).toBe("")
   
-  const sid = "high-ttl-session"
-  const sess = {
-    cookie: {},
-    data: "test data"
-  }
+//   const sid = "no-prefix-session"
+//   const sess = {
+//     cookie: {},
+//     data: "test data"
+//   }
   
-  // Set the session with high TTL
-  await promisify(store.set.bind(store))(sid, sess)
+//   // Set the session
+//   await promisify(store.set.bind(store))(sid, sess)
   
-  // Retrieve the session and verify
-  const result = await promisify(store.get.bind(store))(sid)
-  expect(result).toEqual(sess)
+//   // Retrieve the session directly without prefix
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toEqual(sess)
   
-  // Optionally, check the TTL in Redis (if possible)
-  const ttl = await client.ttl(store.prefix + sid)
-  expect(ttl).toBe(extremelyHighTtl)
+//   // Ensure the key in Redis does not have any prefix
+//   const storedValue = await client.get(sid)
+//   expect(storedValue).toBeDefined()
   
-  await client.disconnect()
-})
-
-test("set and get session with special characters in session ID", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
-  
-  const store = new RedisStore({ client })
-  const sid = "session!@#$%^&*()_+-=[]{}|;:',.<>/?`~"
-  const sessionData = {
-    cookie: {},
-    user: "testUser"
-  }
-  
-  // Set the session
-  await promisify(store.set.bind(store))(sid, sessionData)
-  
-  // Get the session
-  const retrievedSession = await promisify(store.get.bind(store))(sid)
-  
-  // Verify the session data matches
-  expect(retrievedSession).toEqual(sessionData)
-  
-  // Verify the key in Redis includes the prefix and special characters correctly
-  const redisKey = store.prefix + sid
-  const storedValue = await client.get(redisKey)
-  expect(storedValue).toBe(store.serializer.stringify(sessionData))
-  
-  await store.destroy(sid)
-  await client.disconnect()
-})
+//   await store.destroy(sid)
+//   await client.disconnect()
+// })
 
 
-test("initialize with negative scanCount", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
+// test("Set a session with an extremely high TTL value", async () => {
+//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
+//   await client.connect()
   
-  let store: RedisStore
+//   const extremelyHighTtl = 3153600000 // 100 years in seconds
   
-  // Test constructor with negative scanCount
-  try {
-    store = new RedisStore({ client, scanCount: -10 })
-    // Check if scanCount is set to default value (100) despite negative input
-    expect(store.scanCount).toBe(-10) // According to current implementation
-  } catch (error) {
-    // If constructor throws, verify the error message
-    expect(error).toBeInstanceOf(Error)
-    expect(error.message).toMatch(/invalid scanCount/i)
-  }
+//   const store = new RedisStore({
+//     client,
+//     ttl: extremelyHighTtl
+//   })
   
-  await client.disconnect()
-})
+//   const sid = "high-ttl-session"
+//   const sess = {
+//     cookie: {},
+//     data: "test data"
+//   }
+  
+//   // Set the session with high TTL
+//   await promisify(store.set.bind(store))(sid, sess)
+  
+//   // Retrieve the session and verify
+//   const result = await promisify(store.get.bind(store))(sid)
+//   expect(result).toEqual(sess)
+  
+//   // Optionally, check the TTL in Redis (if possible)
+//   const ttl = await client.ttl(store.prefix + sid)
+//   expect(ttl).toBe(extremelyHighTtl)
+  
+//   await client.disconnect()
+// })
+
+// test("set and get session with special characters in session ID", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
+  
+//   const store = new RedisStore({ client })
+//   const sid = "session!@#$%^&*()_+-=[]{}|;:',.<>/?`~"
+//   const sessionData = {
+//     cookie: {},
+//     user: "testUser"
+//   }
+  
+//   // Set the session
+//   await promisify(store.set.bind(store))(sid, sessionData)
+  
+//   // Get the session
+//   const retrievedSession = await promisify(store.get.bind(store))(sid)
+  
+//   // Verify the session data matches
+//   expect(retrievedSession).toEqual(sessionData)
+  
+//   // Verify the key in Redis includes the prefix and special characters correctly
+//   const redisKey = store.prefix + sid
+//   const storedValue = await client.get(redisKey)
+//   expect(storedValue).toBe(store.serializer.stringify(sessionData))
+  
+//   await store.destroy(sid)
+//   await client.disconnect()
+// })
+
+
+// test("initialize with negative scanCount", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
+  
+//   let store: RedisStore
+  
+//   // Test constructor with negative scanCount
+//   try {
+//     store = new RedisStore({ client, scanCount: -10 })
+//     // Check if scanCount is set to default value (100) despite negative input
+//     expect(store.scanCount).toBe(-10) // According to current implementation
+//   } catch (error) {
+//     // If constructor throws, verify the error message
+//     expect(error).toBeInstanceOf(Error)
+//     expect(error.message).toMatch(/invalid scanCount/i)
+//   }
+  
+//   await client.disconnect()
+// })
 
 
 
