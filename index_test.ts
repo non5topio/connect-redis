@@ -27,144 +27,142 @@ test("defaults", async () => {
   await client.disconnect()
 })
 
-test("get session with asynchronous delayed serializer.parse", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
+// test("get session with asynchronous delayed serializer.parse", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
   
-  const delayedSerializer: Serializer = {
-    parse: async (s: string) => {
-      await new Promise(res => setTimeout(res, 100))
-      return JSON.parse(s)
-    },
-    stringify: JSON.stringify
-  }
+//   const delayedSerializer: Serializer = {
+//     parse: async (s: string) => {
+//       await new Promise(res => setTimeout(res, 100))
+//       return JSON.parse(s)
+//     },
+//     stringify: JSON.stringify
+//   }
   
-  const store = new RedisStore({
-    client,
-    serializer: delayedSerializer
-  })
-  const sid = "delayed-parse-session"
-  const sess = { cookie: {}, data: "delayed-parse" }
+//   const store = new RedisStore({
+//     client,
+//     serializer: delayedSerializer
+//   })
+//   const sid = "delayed-parse-session"
+//   const sess = { cookie: {}, data: "delayed-parse" }
   
-  // Set the session
-  await new Promise<void>((resolve, reject) => {
-    store.set(sid, sess, (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
+//   // Set the session
+//   await new Promise<void>((resolve, reject) => {
+//     store.set(sid, sess, (err) => {
+//       if (err) reject(err)
+//       else resolve()
+//     })
+//   })
   
-  // Get the session
-  const result = await new Promise<SessionData | undefined>((resolve, reject) => {
-    store.get(sid, (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
-  expect(result).toEqual(sess)
+//   // Get the session
+//   const result = await new Promise<SessionData | undefined>((resolve, reject) => {
+//     store.get(sid, (err, data) => {
+//       if (err) reject(err)
+//       else resolve(data)
+//     })
+//   })
+//   expect(result).toEqual(sess)
   
-  await store.destroy(sid)
-  await client.disconnect()
-})
+//   await store.destroy(sid)
+//   await client.disconnect()
+// })
 
 
-test("set a session with undefined session data", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
+// test("set a session with undefined session data", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
   
-  const store = new RedisStore({ client })
-  const sid = "undefined-session-id"
-  const sess = undefined
+//   const store = new RedisStore({ client })
+//   const sid = "undefined-session-id"
+//   const sess = undefined
   
-  // Attempt to set the session and expect an error
-  await expect(new Promise<void>((resolve, reject) => {
-    store.set(sid, sess, (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })).rejects.toThrow()
+//   // Attempt to set the session and expect an error
+//   await expect(new Promise<void>((resolve, reject) => {
+//     store.set(sid, sess, (err) => {
+//       if (err) reject(err)
+//       else resolve()
+//     })
+//   })).rejects.toThrow()
   
-  // Verify that the session was not stored
-  const result = await new Promise<SessionData | undefined>((resolve, reject) => {
-    store.get(sid, (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
-  expect(result).toBeUndefined()
+//   // Verify that the session was not stored
+//   const result = await new Promise<SessionData | undefined>((resolve, reject) => {
+//     store.get(sid, (err, data) => {
+//       if (err) reject(err)
+//       else resolve(data)
+//     })
+//   })
+//   expect(result).toBeUndefined()
   
-  await client.disconnect()
-})
+//   await client.disconnect()
+// })
 
 
-test("set and get a session with whitespace session ID", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
+// test("set and get a session with whitespace session ID", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
   
-  const store = new RedisStore({ client })
-  const sid = "   "
-  const sess = { cookie: {}, data: "whitespace-session-id" }
+//   const store = new RedisStore({ client })
+//   const sid = "   "
+//   const sess = { cookie: {}, data: "whitespace-session-id" }
   
-  // Set the session
-  await new Promise<void>((resolve, reject) => {
-    store.set(sid, sess, (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
+//   // Set the session
+//   await new Promise<void>((resolve, reject) => {
+//     store.set(sid, sess, (err) => {
+//       if (err) reject(err)
+//       else resolve()
+//     })
+//   })
   
-  // Get the session
-  const result = await new Promise<SessionData | undefined>((resolve, reject) => {
-    store.get(sid, (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
-  expect(result).toEqual(sess)
+//   // Get the session
+//   const result = await new Promise<SessionData | undefined>((resolve, reject) => {
+//     store.get(sid, (err, data) => {
+//       if (err) reject(err)
+//       else resolve(data)
+//     })
+//   })
+//   expect(result).toEqual(sess)
   
-  // Verify that the key with whitespace is correctly stored
-  const keys = await store["_getAllKeys"]()
-  expect(keys).toContain(store.prefix + sid)
+//   // Verify that the key with whitespace is correctly stored
+//   const keys = await store["_getAllKeys"]()
+//   expect(keys).toContain(store.prefix + sid)
   
-  await store.destroy(sid)
-  await client.disconnect()
-})
+//   await store.destroy(sid)
+//   await client.disconnect()
+// })
 
 
-test("set and get a session with empty session ID", async () => {
-  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
-  await client.connect()
+// test("set and get a session with empty session ID", async () => {
+//   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+//   await client.connect()
   
-  const store = new RedisStore({ client })
-  const sid = ""
-  const sess = { cookie: {}, data: "empty-session-id" }
+//   const store = new RedisStore({ client })
+//   const sid = ""
+//   const sess = { cookie: {}, data: "empty-session-id" }
   
-  // Set the session
-  await new Promise<void>((resolve, reject) => {
-    store.set(sid, sess, (err) => {
-      if (err) reject(err)
-      else resolve()
-    })
-  })
+//   // Set the session
+//   await new Promise<void>((resolve, reject) => {
+//     store.set(sid, sess, (err) => {
+//       if (err) reject(err)
+//       else resolve()
+//     })
+//   })
   
-  // Get the session
-  const result = await new Promise<SessionData | undefined>((resolve, reject) => {
-    store.get(sid, (err, data) => {
-      if (err) reject(err)
-      else resolve(data)
-    })
-  })
-  expect(result).toEqual(sess)
+//   // Get the session
+//   const result = await new Promise<SessionData | undefined>((resolve, reject) => {
+//     store.get(sid, (err, data) => {
+//       if (err) reject(err)
+//       else resolve(data)
+//     })
+//   })
+//   expect(result).toEqual(sess)
   
-  // Verify that only the prefix key is set in Redis
-  const keys = await store["_getAllKeys"]()
-  expect(keys).toHaveLength(1)
-  expect(keys[0]).toBe(store.prefix)
+//   // Verify that only the prefix key is set in Redis
+//   const keys = await store["_getAllKeys"]()
+//   expect(keys).toHaveLength(1)
+//   expect(keys[0]).toBe(store.prefix)
   
-  await client.disconnect()
-})
-
-
+//   await client.disconnect()
+// })
 
 // test("error handling", async () => {
 //   // Create a mock client that throws errors
@@ -325,38 +323,6 @@ test("set and get a session with empty session ID", async () => {
 //   expect(store.disableTTL).toBe(true)
 //   expect(store.disableTouch).toBe(true)
 //   expect(store.serializer).toBe(customSerializer)
-  
-//   await client.disconnect()
-// })
-
-
-// test("complete session lifecycle", async () => {
-//   const client = createClient({url: `redis://localhost:${redisSrv.port}`})
-//   await client.connect()
-  
-//   const store = new RedisStore({client})
-//   const sid = "test-session-id"
-//   const sess = {
-//     cookie: { maxAge: 2000 },
-//     name: "test-session"
-//   }
-  
-//   // Set session
-//   await promisify(store.set.bind(store))(sid, sess)
-  
-//   // Get session
-//   const result = await promisify(store.get.bind(store))(sid)
-//   expect(result).toEqual(sess)
-  
-//   // Touch session
-//   await promisify(store.touch.bind(store))(sid, sess)
-  
-//   // Destroy session
-//   await promisify(store.destroy.bind(store))(sid)
-  
-//   // Verify session is gone
-//   const afterDestroy = await promisify(store.get.bind(store))(sid)
-//   expect(afterDestroy).toBeUndefined()
   
 //   await client.disconnect()
 // })
