@@ -224,6 +224,75 @@ test("handle extremely large session ID", async () => {
   await client.disconnect()
 })
 
+test("normalizeClient set without TTL", async () => {
+  // Mock redis client (v4+)
+  const mockRedisClient = {
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    expire: vi.fn(),
+    mGet: vi.fn(),
+    scanIterator: vi.fn().mockImplementation(() => async function*() {}()), // Make it identifiable as redis v4+
+  }
+  const redisStore = new RedisStore({ client: mockRedisClient, disableTTL: true }) // disableTTL ensures set is called without ttl internally
+
+  // Call set via store, which uses normalizeClient internally
+  await promisify(redisStore.set.bind(redisStore))("redis-key", { cookie: {} })
+  // Expect underlying client.set to be called with only key and value
+  expect(mockRedisClient.set).toHaveBeenCalledWith(redisStore.prefix + "redis-key", expect.any(String))
+  expect(mockRedisClient.set).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything())
+
+
+  // Mock ioredis client
+  const mockIoRedisClient = {
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    expire: vi.fn(),
+    mget: vi.fn(),
+    scan: vi.fn().mockResolvedValue(["0", []]), // Make it identifiable as ioredis
+  }
+  const ioredisStore = new RedisStore({ client: mockIoRedisClient, disableTTL: true })
+
+  // Call set via store
+  await promisify(ioredisStore.set.bind(ioredisStore))("ioredis-key", { cookie: {} })
+  // Expect underlying client.set to be called with only key and value
+  expect(mockIoRedisClient.set).toHaveBeenCalledWith(ioredisStore.prefix + "ioredis-key", expect.any(String))
+  expect(mockIoRedisClient.set).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything())
+})
+
+
+test("successful touch operation", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  const store = new RedisStore({ client, ttl: 60 }) // Default 60s TTL
+  const sid = "successful-touch-sid"
+  const initialSess = { cookie: {} }
+  const touchSess = { cookie: { expires: new Date(Date.now() + 120 * 1000) } } // Expires in 120s
+
+  try {
+    // Set initial session
+    await promisify(store.set.bind(store))(sid, initialSess)
+    const initialTTL = await client.ttl(store.prefix + sid)
+    expect(initialTTL).toBeGreaterThan(0)
+    expect(initialTTL).toBeLessThanOrEqual(60)
+
+    // Touch the session to update TTL
+    const touchResult = await promisify(store.touch.bind(store))(sid, touchSess)
+    expect(touchResult).toBeUndefined() // Callback should receive (null), promisified gives undefined
+
+    // Verify TTL was updated
+    const updatedTTL = await client.ttl(store.prefix + sid)
+    expect(updatedTTL).toBeGreaterThan(60) // Should be around 120 now
+    expect(updatedTTL).toBeLessThanOrEqual(120)
+
+  } finally {
+    await store.destroy(sid)
+    await client.disconnect()
+  }
+})
+
+
 
 // test("get session with asynchronous delayed serializer.parse", async () => {
 //   const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
