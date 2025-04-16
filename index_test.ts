@@ -7,6 +7,10 @@ import {RedisStore} from "./"
 import * as redisSrv from "./testdata/server"
 import { vi } from "vitest"
 import { promisify } from "node:util"
+import { Cookie } from "express-session";
+import { createClient } from "redis";
+import { promisify } from "node:util";
+import { vi } from "vitest";
 
 test("setup", async () => {
   await redisSrv.connect()
@@ -291,3 +295,68 @@ test("defaults", async () => {
 //     await client.disconnect()
 //   }
 // })
+
+test("get with malformed data in Redis", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  const store = new RedisStore({ client, prefix: "malformed:" })
+  const sid = "malformed-data-sid-1"
+  const key = store.prefix + sid
+  const malformedData = "{invalid json"
+
+  try {
+    // Manually set malformed data in Redis
+    await client.set(key, malformedData)
+
+    // Attempt to get the session
+    await expect(promisify(store.get.bind(store))(sid))
+      .rejects.toThrow() // Expect JSON parse error or similar
+
+    // Verify the key still exists (get shouldn't delete it)
+    const redisVal = await client.get(key)
+    expect(redisVal).toBe(malformedData)
+
+  } finally {
+    // Clean up
+    await client.del(key)
+    await client.disconnect()
+  }
+})
+
+
+test("set with TTL function returning 0", async () => {
+  const client = createClient({ url: `redis://localhost:${redisSrv.port}` })
+  await client.connect()
+  const ttlFunc = vi.fn((_sess) => 0)
+  const store = new RedisStore({ client, ttl: ttlFunc, prefix: "ttlzero:" })
+  const sid = "ttl-zero-sid-1"
+  const sess = { cookie: new Cookie() }
+  const key = store.prefix + sid
+
+  const destroySpy = vi.spyOn(store, 'destroy')
+  const clientDelSpy = vi.spyOn(store.client, 'del')
+  const clientSetSpy = vi.spyOn(store.client, 'set')
+
+  try {
+    await promisify(store.set.bind(store))(sid, sess)
+
+    expect(ttlFunc).toHaveBeenCalledWith(sess)
+    // Check that destroy was called internally
+    expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function))
+    // Check that client.del was called by destroy
+    expect(clientDelSpy).toHaveBeenCalledWith([key])
+    // Check that client.set was NOT called
+    expect(clientSetSpy).not.toHaveBeenCalled()
+
+    // Verify data does not exist
+    const result = await promisify(store.get.bind(store))(sid)
+    expect(result).toBeUndefined()
+    const redisVal = await client.get(key)
+    expect(redisVal).toBeNull()
+
+  } finally {
+    destroySpy.mockRestore()
+    await client.disconnect()
+  }
+})
+
