@@ -290,3 +290,155 @@ test("defaults", async () => {
 //     await client.disconnect()
 //   }
 // })
+
+test("disableTTL option", async () => {
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn().mockResolvedValue("OK"),
+    expire: vi.fn().mockResolvedValue(1), // Should not be called by touch
+    del: vi.fn().mockResolvedValue(1),
+    scanIterator: vi.fn().mockImplementation(async function*() {}()),
+    mget: vi.fn(),
+  };
+  const store = new RedisStore({ client: mockClient, disableTTL: true });
+  const sid = "disable-ttl-sid";
+  const sess = { cookie: {} };
+
+  // Test set with disableTTL = true
+  await promisify(store.set.bind(store))(sid, sess);
+  expect(mockClient.set).toHaveBeenCalledWith(store.prefix + sid, JSON.stringify(sess)); // No TTL argument
+  // Ensure it wasn't called with TTL
+  expect(mockClient.set).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything());
+
+
+  // Test touch with disableTTL = true
+  await promisify(store.touch.bind(store))(sid, sess);
+  expect(mockClient.expire).not.toHaveBeenCalled(); // Expire should not be called
+});
+
+
+test("get non-existent session", async () => {
+  const mockClient = {
+    get: vi.fn().mockResolvedValue(null), // Simulate key not found
+    set: vi.fn(),
+    expire: vi.fn(),
+    del: vi.fn(),
+    scanIterator: vi.fn().mockImplementation(async function*() {}()),
+    mget: vi.fn(),
+  };
+  const store = new RedisStore({ client: mockClient });
+  const sid = "nonexistent-sid";
+
+  const result = await promisify(store.get.bind(store))(sid);
+
+  expect(mockClient.get).toHaveBeenCalledWith(store.prefix + sid);
+  expect(result).toBeUndefined(); // Promisified callback(null) results in undefined
+});
+
+
+test("set with serializer stringify error", async () => {
+  const stringifyError = new Error("Stringify Error");
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn(), // This should not be called
+    expire: vi.fn(),
+    del: vi.fn(),
+    scanIterator: vi.fn().mockImplementation(async function*() {}()),
+    mget: vi.fn(),
+  };
+  const customSerializer = {
+    parse: JSON.parse,
+    stringify: () => { throw stringifyError; },
+  };
+  const store = new RedisStore({ client: mockClient, serializer: customSerializer });
+  const sid = "serializer-stringify-error-sid";
+  const sess = { cookie: {} };
+
+  // Using try/catch with promisify to check the error passed to callback
+  try {
+    await promisify(store.set.bind(store))(sid, sess);
+    // Should not reach here
+    expect(true).toBe(false);
+  } catch (err) {
+    expect(err).toBe(stringifyError);
+  }
+  expect(mockClient.set).not.toHaveBeenCalled();
+});
+
+
+test("get with serializer parse error", async () => {
+  const parseError = new Error("Parse Error");
+  const mockClient = {
+    get: vi.fn().mockResolvedValue('{"cookie":{}}'), // Simulate valid data from Redis
+    set: vi.fn(),
+    expire: vi.fn(),
+    del: vi.fn(),
+    scanIterator: vi.fn().mockImplementation(async function*() {}()),
+    mget: vi.fn(),
+  };
+  const customSerializer = {
+    parse: () => { throw parseError; },
+    stringify: JSON.stringify,
+  };
+  const store = new RedisStore({ client: mockClient, serializer: customSerializer });
+  const sid = "serializer-parse-error-sid";
+
+  // Using try/catch with promisify to check the error passed to callback
+  try {
+    await promisify(store.get.bind(store))(sid);
+    // Should not reach here
+    expect(true).toBe(false);
+  } catch (err) {
+    expect(err).toBe(parseError);
+  }
+  expect(mockClient.get).toHaveBeenCalledWith(store.prefix + sid);
+});
+
+
+test("TTL function returning zero or negative", async () => {
+  const mockClient = {
+    get: vi.fn(),
+    set: vi.fn().mockResolvedValue("OK"),
+    expire: vi.fn().mockResolvedValue(1),
+    del: vi.fn().mockResolvedValue(1),
+    scanIterator: vi.fn().mockImplementation(async function*() {}()),
+    mget: vi.fn(),
+  };
+
+  const ttlFn = (sess: any) => (sess && sess.user ? 0 : -10);
+  const store = new RedisStore({ client: mockClient, ttl: ttlFn });
+  const sid = "ttl-fn-test-sid";
+  const destroySpy = vi.spyOn(store, 'destroy');
+
+  // Test set with TTL 0 (should call destroy)
+  const sessWithUser = { cookie: {}, user: 'test' };
+  await promisify(store.set.bind(store))(sid, sessWithUser);
+  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function));
+  expect(mockClient.set).not.toHaveBeenCalled(); // Should not set if TTL <= 0
+  destroySpy.mockClear(); // Reset spy for next assertion
+
+  // Test set with TTL -10 (should call destroy)
+  const sessWithoutUser = { cookie: {} };
+  await promisify(store.set.bind(store))(sid, sessWithoutUser);
+  expect(destroySpy).toHaveBeenCalledWith(sid, expect.any(Function));
+  expect(mockClient.set).not.toHaveBeenCalled();
+  destroySpy.mockRestore(); // Clean up spy
+
+  // Test touch with TTL 0 (should not call expire with positive TTL)
+  mockClient.expire.mockClear();
+  await promisify(store.touch.bind(store))(sid, sessWithUser);
+  // Depending on interpretation, expire might be called with <= 0 or not at all.
+  // We assert it's not called with a positive value.
+  // If it's called, the second arg (ttl) should not be > 0
+  if (mockClient.expire.mock.calls.length > 0) {
+      expect(mockClient.expire.mock.calls[0][1]).toBeLessThanOrEqual(0);
+  }
+
+
+  // Test touch with TTL -10 (should not call expire with positive TTL)
+  mockClient.expire.mockClear();
+  await promisify(store.touch.bind(store))(sid, sessWithoutUser);
+   if (mockClient.expire.mock.calls.length > 0) {
+      expect(mockClient.expire.mock.calls[0][1]).toBeLessThanOrEqual(0);
+  }
+});
