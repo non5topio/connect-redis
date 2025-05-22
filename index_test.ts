@@ -1,4 +1,3 @@
-
 import * as redisSrv from "./testdata/server"
 import {RedisStore} from "./"
 
