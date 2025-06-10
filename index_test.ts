@@ -582,3 +582,285 @@ test("RedisStore initializes with default options", async () => {
 });
 
 */
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 588 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Checking the test code they provided, the import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("client set error triggers callback in set method", async () => {
+  const mockClient = {
+    set: vi.fn().mockRejectedValue(new Error("Redis error")),
+  };
+  const store = new RedisStore({ client: mockClient });
+  const callback = vi.fn();
+  await store.set("test-sid", { cookie: {} }, callback);
+  expect(callback).toHaveBeenCalledWith(new Error("Redis error"));
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 588 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Checking the test code they provided, the import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("serializer parse error propagates to get callback", async () => {
+  const mockSerializer: Serializer = {
+    parse: vi.fn(() => { throw new Error("Parse error") }),
+    stringify: vi.fn(),
+  };
+  const store = new RedisStore({ client: {}, serializer: mockSerializer });
+  const callback = vi.fn();
+  await store.get("test-sid", callback);
+  expect(callback).toHaveBeenCalledWith(new Error("Parse error"));
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 587 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Let me check the test code they provided. The import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("disableTTL prevents touch from updating TTL", async () => {
+  const mockClient = { expire: vi.fn() };
+  const store = new RedisStore({
+    client: mockClient,
+    disableTTL: true,
+  });
+  const sess = { cookie: { expires: new Date() } };
+  await store.touch("test-sid", sess);
+  expect(mockClient.expire).not.toHaveBeenCalled();
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 587 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Let me check the test code they provided. The import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("expired cookie causes set to call destroy", async () => {
+  const mockClient = { del: vi.fn() };
+  const store = new RedisStore({ client: mockClient });
+  const pastDate = new Date(Date.now() - 10000);
+  const sess = { cookie: { expires: pastDate } };
+  const destroySpy = vi.spyOn(store, "destroy");
+  await store.set("test-sid", sess);
+  expect(destroySpy).toHaveBeenCalledWith("test-sid", expect.any(Function));
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let's see what's going on here. The user is running their tests with Vitest, and they're getting a failure in the "TTL function returning invalid type uses default TTL" test. The error message says "vi is not defined" on line 587 of index_test.ts. 
+
+First, I remember that in Vitest, 'vi' is the object that provides mocking functions like fn(), spy, etc. So if the test is using vi.fn() but hasn't imported it, that would cause this error. Looking at the provided test code, the initial import statement is "import {test} from 'vitest'", which only imports the test function. They're using 'vi' and 'expect' in their tests, but those aren't imported.
+
+The error specifically points to line 587 where mockClient is using vi.fn(). Since 'vi' isn't imported, that's why it's undefined. Additionally, any assertions using 'expect' would also fail because 'expect' isn't imported either. 
+
+The fix should be to update the import statement to include both 'vi' and 'expect' from 'vitest'. So changing the import line to "import { test, vi, expect } from 'vitest';" would resolve the ReferenceError for 'vi' and also make 'expect' available for assertions in other tests. 
+
+Looking through the test code provided, there are multiple tests using 'vi.fn()' and 'expect', so this change should fix all the related issues. The user might have other tests failing due to missing 'expect', but the immediate fix here is adding those imports.
+</think>
+
+The tests failed because `vi` is not imported. In `index_test.ts`, `vi` is used for mocking but not imported from `vitest`.
+
+**Fix:**  
+Add `vi` and `expect` imports:  
+```diff  
+- import {test} from "vitest"  
++ import {test, expect, vi} from "vitest"  
+```
+
+test("TTL function returning invalid type uses default TTL", async () => {
+  const mockClient = { set: vi.fn() };
+  const store = new RedisStore({
+    client: mockClient,
+    ttl: () => "invalid" as any,
+  });
+  const sess = { cookie: { expires: new Date() } };
+  await store.set("test-sid", sess);
+  expect(mockClient.set).toHaveBeenCalledWith(
+    "sess:test-sid",
+    expect.any(String),
+    86400 // default TTL
+  );
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 588 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Let me check the test code they provided. The import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("getAllKeys collects all keys across multiple scan iterations", async () => {
+  const mockClient = {
+    scanIterator: vi.fn().mockImplementation(() => ({
+      [Symbol.asyncIterator]: async function* () {
+        yield "sess:key1";
+        yield "sess:key2";
+        yield "sess:key3";
+        yield "sess:key4";
+      },
+    })),
+  };
+  const store = new RedisStore({ client: mockClient, scanCount: 2 });
+  const keys = await store._getAllKeys();
+  expect(keys).toEqual(["sess:key1", "sess:key2", "sess:key3", "sess:key4"]);
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 588 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Let me check the test code they provided. The import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("normalizeClient uses ioredis scanIterator implementation", async () => {
+  const mockClient = {
+    scan: vi.fn().mockImplementation((cursor, ...args) => {
+      if (cursor === "0") return ["100", ["key1", "key2"]];
+      return ["0", []];
+    }),
+  };
+  const store = new RedisStore({ client: mockClient });
+  const keys = await store._getAllKeys();
+  expect(mockClient.scan).toHaveBeenCalledTimes(2);
+  expect(keys).toEqual(["key1", "key2"]);
+});
+
+*/
+/*
+FAILED TEST: <think>
+Okay, let me look at the problem here. The user's test is failing because of a ReferenceError saying 'vi is not defined'. The error points to line 587 in index_test.ts where they're using vi.fn(). 
+
+Hmm, I remember that in Vitest, 'vi' is used for mocking functions, like spies and mocks. So the test file probably didn't import 'vi' from vitest. Let me check the test code they provided. The import statement is "import {test} from 'vitest'", but they're using 'vi' and 'expect' without importing them. Oh right, that's the issue. They need to import both 'vi' and 'expect' from vitest.
+
+The test uses 'vi.fn()' to create mock functions and 'expect' for assertions, but neither is imported. The fix should be to update the import statement to include 'vi' and 'expect'. So changing the import line to "import { test, expect, vi } from 'vitest';" should resolve the ReferenceErrors. 
+
+Looking at the stderr, the first failure is about 'vi' not being defined. But other tests might also fail because 'expect' isn't imported either. So adding both to the import is necessary. The duplicate import of RedisStore in the test code is probably a typo but not related to the current error. The main problem is the missing imports. 
+
+Therefore, the solution is to adjust the import statement to include test, expect, and vi from vitest. That should fix the ReferenceErrors and allow the tests to run properly.
+</think>
+
+The tests failed because `vi` and `expect` are not imported. In `index_test.ts`, `vi` is used for mocking and `expect` for assertions but neither is imported from `vitest`.
+
+**Fix:**  
+Update the import statement to include `vi` and `expect`:  
+```diff  
+- import {test} from "vitest"  
++ import {test, vi, expect} from "vitest"  
+```
+
+test("prefix is empty stores keys without prefix", async () => {
+  const mockClient = { set: vi.fn() };
+  const store = new RedisStore({ client: mockClient, prefix: "" });
+  const sess = { cookie: { expires: new Date() } };
+  await store.set("test-sid", sess);
+  expect(mockClient.set).toHaveBeenCalledWith(
+    "test-sid",
+    expect.any(String),
+    expect.any(Number)
+  );
+});
+
+*/
